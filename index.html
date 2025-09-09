@@ -460,7 +460,7 @@
     <script>
         // Cấu hình API
         const API_CONFIG = {
-            BASE_URL: 'https://script.google.com/macros/s/AKfycbyUP1EbxYxwWrLKr3dUDY01FIT3Ij4Vkx5yvyRXjhBdBKtYUYW6Hb01gSL1h59yolDzBg/exec', // Thay bằng URL thực của bạn
+            BASE_URL: '1E-FX6JaSrAETW8FDD9KQ50c2ya2KwQAKqH7DESqTY68', // Thay bằng URL thực của bạn
             COURSE_ID: 1
         };
 
@@ -683,11 +683,31 @@
         async function completeTopic() {
             if (!currentUser || !currentTopic || currentTopic.completed) return;
 
+            // In demo mode, just update locally
+            if (API_CONFIG.BASE_URL === 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL') {
+                currentTopic.completed = true;
+                
+                const checkbox = document.getElementById(`checkbox-${currentLesson.id}-${currentTopic.id}`);
+                if (checkbox) {
+                    checkbox.classList.add('checked');
+                    checkbox.parentElement.classList.add('completed');
+                }
+                
+                updateProgress();
+                
+                const btn = document.querySelector('.complete-btn');
+                btn.textContent = '✓ Đã hoàn thành!';
+                btn.disabled = true;
+                
+                showSuccess('Đã đánh dấu hoàn thành! (Demo Mode)');
+                return;
+            }
+
             try {
-                const response = await fetch(`${API_CONFIG.BASE_URL}?action=updateProgress`, {
+                const response = await fetch(`${API_CONFIG.BASE_URL}`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
+                        'Content-Type': 'text/plain;charset=utf-8'
                     },
                     body: JSON.stringify({
                         action: 'updateProgress',
@@ -697,7 +717,9 @@
                     })
                 });
 
-                const result = await response.json();
+                const resultText = await response.text();
+                console.log('Update progress response:', resultText);
+                const result = JSON.parse(resultText);
 
                 if (result.success) {
                     // Update local data
@@ -737,7 +759,23 @@
                 }
             } catch (error) {
                 console.error('Error completing topic:', error);
-                showError('Có lỗi xảy ra khi cập nhật tiến độ');
+                
+                // Fallback to local update
+                currentTopic.completed = true;
+                
+                const checkbox = document.getElementById(`checkbox-${currentLesson.id}-${currentTopic.id}`);
+                if (checkbox) {
+                    checkbox.classList.add('checked');
+                    checkbox.parentElement.classList.add('completed');
+                }
+                
+                updateProgress();
+                
+                const btn = document.querySelector('.complete-btn');
+                btn.textContent = '✓ Đã hoàn thành!';
+                btn.disabled = true;
+                
+                showSuccess('Đã đánh dấu hoàn thành! (Lưu local)');
             }
         }
 
